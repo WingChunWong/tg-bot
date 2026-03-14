@@ -1,0 +1,26 @@
+{
+  "name": "github-release-telegram-bot",
+  "version": "1.0.0",
+  "description": "GitHub Release notification bot for Telegram, deployed on Cloudflare Workers",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "keywords": [
+    "github",
+    "release",
+    "telegram",
+    "bot",
+    "cloudflare-workers",
+    "webhook"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^4.35.0"
+  }
+}
