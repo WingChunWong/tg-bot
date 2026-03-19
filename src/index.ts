@@ -484,9 +484,6 @@ function generateChangelogMarkdown(data: ChangelogData, repoFullName: string): s
   const lines: string[] = [
     `# Changelog`,
     ``,
-    `> Repository: [${repoFullName}](https://github.com/${repoFullName})`,
-    `> Last updated: ${formatDate(data.lastUpdated)}`,
-    ``,
     `---`,
     ``,
   ];
