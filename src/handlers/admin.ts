@@ -22,14 +22,45 @@ export function generateAdminHtml(): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GitHub Release Bot - Admin</title>
+  <title>MicYou Backend - Admin</title>
   <style>
+    :root {
+      --bg-primary: #f5f5f5;
+      --bg-secondary: #fff;
+      --bg-tertiary: #fafafa;
+      --text-primary: #333;
+      --text-secondary: #888;
+      --border-color: #e8e8e8;
+      --border-light: #f0f0f0;
+      --shadow: rgba(0,0,0,0.1);
+      --success-bg: #f6ffed;
+      --success-border: #b7eb8f;
+      --error-bg: #fff2f0;
+      --error-border: #ffccc7;
+    }
+    
+    [data-theme="dark"] {
+      --bg-primary: #141414;
+      --bg-secondary: #1f1f1f;
+      --bg-tertiary: #2a2a2a;
+      --text-primary: #e8e8e8;
+      --text-secondary: #888;
+      --border-color: #333;
+      --border-light: #2a2a2a;
+      --shadow: rgba(0,0,0,0.3);
+      --success-bg: #162312;
+      --success-border: #274916;
+      --error-bg: #2a1215;
+      --error-border: #5c2a2e;
+    }
+    
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f5f5f5;
+      background: var(--bg-primary);
       min-height: 100vh;
-      color: #333;
+      color: var(--text-primary);
+      transition: background 0.3s, color 0.3s;
     }
     .login-container {
       min-height: 100vh;
@@ -38,11 +69,11 @@ export function generateAdminHtml(): string {
       justify-content: center;
     }
     .login-box {
-      background: #fff;
+      background: var(--bg-secondary);
       border-radius: 8px;
       padding: 32px;
       width: 360px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 8px var(--shadow);
     }
     .login-box h1 {
       font-size: 20px;
@@ -53,10 +84,12 @@ export function generateAdminHtml(): string {
     .login-box input[type="password"] {
       width: 100%;
       padding: 12px;
-      border: 1px solid #ddd;
+      border: 1px solid var(--border-color);
       border-radius: 4px;
       font-size: 14px;
       margin-bottom: 16px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
     }
     .login-box input[type="password"]:focus {
       outline: none;
@@ -82,11 +115,33 @@ export function generateAdminHtml(): string {
       display: none;
     }
     
+    /* Theme Toggle */
+    .theme-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      z-index: 100;
+      transition: all 0.3s;
+    }
+    .theme-toggle:hover {
+      border-color: #1890ff;
+    }
+    
     /* Dashboard */
     .dashboard { display: none; }
     .header {
-      background: #fff;
-      border-bottom: 1px solid #e8e8e8;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
       padding: 16px 24px;
       display: flex;
       justify-content: space-between;
@@ -108,29 +163,30 @@ export function generateAdminHtml(): string {
     }
     .logout-btn {
       padding: 6px 12px;
-      background: #fff;
-      border: 1px solid #ddd;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
       border-radius: 4px;
       font-size: 13px;
       cursor: pointer;
+      color: var(--text-primary);
     }
     .logout-btn:hover {
       border-color: #1890ff;
       color: #1890ff;
     }
-    
+
     .content {
       padding: 24px;
       max-width: 800px;
       margin: 0 auto;
     }
-    
+
     .card {
-      background: #fff;
+      background: var(--bg-secondary);
       border-radius: 8px;
       padding: 20px;
       margin-bottom: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 3px var(--shadow);
     }
     .card-header {
       display: flex;
@@ -142,7 +198,7 @@ export function generateAdminHtml(): string {
       font-size: 16px;
       font-weight: 600;
     }
-    
+
     .status-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -151,20 +207,20 @@ export function generateAdminHtml(): string {
     @media (max-width: 600px) {
       .status-grid { grid-template-columns: 1fr; }
     }
-    
+
     .status-item {
       padding: 16px;
-      background: #fafafa;
+      background: var(--bg-tertiary);
       border-radius: 6px;
       border-left: 3px solid #ddd;
     }
     .status-item.online { border-left-color: #52c41a; }
     .status-item.offline { border-left-color: #f5222d; }
     .status-item.pending { border-left-color: #faad14; }
-    
+
     .status-label {
       font-size: 12px;
-      color: #888;
+      color: var(--text-secondary);
       margin-bottom: 4px;
     }
     .status-value {
@@ -174,7 +230,7 @@ export function generateAdminHtml(): string {
     .status-value.success { color: #52c41a; }
     .status-value.error { color: #f5222d; }
     .status-value.warning { color: #faad14; }
-    
+
     .action-btn {
       padding: 10px 20px;
       background: #1890ff;
@@ -195,7 +251,7 @@ export function generateAdminHtml(): string {
     .action-btn.danger:hover {
       background: #ff4d4f;
     }
-    
+
     .result-msg {
       margin-top: 12px;
       padding: 10px;
@@ -204,48 +260,50 @@ export function generateAdminHtml(): string {
       display: none;
     }
     .result-msg.success {
-      background: #f6ffed;
-      border: 1px solid #b7eb8f;
+      background: var(--success-bg);
+      border: 1px solid var(--success-border);
       color: #52c41a;
     }
     .result-msg.error {
-      background: #fff2f0;
-      border: 1px solid #ffccc7;
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
       color: #f5222d;
     }
-    
+
     .info-row {
       display: flex;
       justify-content: space-between;
       padding: 8px 0;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--border-light);
     }
     .info-row:last-child { border-bottom: none; }
-    .info-label { color: #888; font-size: 13px; }
+    .info-label { color: var(--text-secondary); font-size: 13px; }
     .info-value { font-size: 13px; }
   </style>
 </head>
 <body>
+  <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">🌙</button>
+  
   <!-- Login -->
   <div class="login-container" id="loginPage">
     <div class="login-box">
-      <h1>GitHub Release Bot</h1>
+      <h1>MicYou Backend</h1>
       <div class="login-error" id="loginError">密码错误</div>
       <input type="password" id="password" placeholder="请输入管理密码" onkeypress="if(event.key==='Enter')login()">
       <button onclick="login()">登录</button>
     </div>
   </div>
-  
+
   <!-- Dashboard -->
   <div class="dashboard" id="dashboard">
     <div class="header">
-      <h1>GitHub Release Bot</h1>
+      <h1>MicYou Backend</h1>
       <div class="header-right">
         <a class="repo-link" href="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}" target="_blank">${GITHUB_OWNER}/${GITHUB_REPO}</a>
         <button class="logout-btn" onclick="logout()">退出</button>
       </div>
     </div>
-    
+
     <div class="content">
       <!-- Status Cards -->
       <div class="card">
@@ -272,7 +330,7 @@ export function generateAdminHtml(): string {
           </div>
         </div>
       </div>
-      
+
       <!-- Changelog Info -->
       <div class="card">
         <div class="card-header">
@@ -291,7 +349,7 @@ export function generateAdminHtml(): string {
           <span class="info-value" id="dataUpdateTime">-</span>
         </div>
       </div>
-      
+
       <!-- Actions -->
       <div class="card">
         <div class="card-header">
@@ -308,30 +366,57 @@ export function generateAdminHtml(): string {
 
   <script>
     const tokenKey = 'admin_token';
+    const themeKey = 'admin_theme';
     
+    // Theme management
+    function getTheme() {
+      const saved = localStorage.getItem(themeKey);
+      if (saved) return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem(themeKey, theme);
+      updateThemeIcon(theme);
+    }
+    
+    function updateThemeIcon(theme) {
+      const btn = document.querySelector('.theme-toggle');
+      if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+    
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
+      setTheme(current === 'dark' ? 'light' : 'dark');
+    }
+    
+    // Initialize theme
+    setTheme(getTheme());
+
     function getToken() {
       return sessionStorage.getItem(tokenKey);
     }
-    
+
     function setToken(token) {
       sessionStorage.setItem(tokenKey, token);
     }
-    
+
     function clearToken() {
       sessionStorage.removeItem(tokenKey);
     }
-    
+
     async function login() {
       const pwd = document.getElementById('password').value;
       if (!pwd) return;
-      
+
       try {
         const res = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password: pwd })
         });
-        
+
         const data = await res.json();
         if (res.ok && data.success) {
           setToken(pwd);
@@ -344,31 +429,30 @@ export function generateAdminHtml(): string {
         document.getElementById('loginError').style.display = 'block';
       }
     }
-    
+
     function logout() {
       clearToken();
       document.getElementById('loginPage').style.display = 'flex';
       document.getElementById('dashboard').style.display = 'none';
       document.getElementById('password').value = '';
     }
-    
+
     function showDashboard() {
       document.getElementById('loginPage').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
       document.getElementById('loginError').style.display = 'none';
       refreshStatus();
     }
-    
+
     async function refreshStatus() {
       const token = getToken();
-      
-      // Fetch changelog status
+
       try {
         const res = await fetch('/api/status', {
           headers: { 'X-Admin-Token': token }
         });
         const data = await res.json();
-        
+
         if (data.changelog) {
           const el = document.getElementById('changelogStatus');
           const val = document.getElementById('changelogValue');
@@ -381,7 +465,7 @@ export function generateAdminHtml(): string {
             val.className = 'status-value warning';
             val.textContent = '暂无数据';
           }
-          
+
           document.getElementById('releaseCount').textContent = data.changelog.count || 0;
           document.getElementById('latestVersion').textContent = data.changelog.latestVersion || '-';
           document.getElementById('dataUpdateTime').textContent = formatTime(data.changelog.lastUpdated);
@@ -391,19 +475,19 @@ export function generateAdminHtml(): string {
         console.error('Failed to fetch status:', e);
       }
     }
-    
+
     async function sendAllReleases() {
       const token = getToken();
       const btn = document.getElementById('sendAllBtn');
       const result = document.getElementById('actionResult');
-      
+
       btn.disabled = true;
       btn.textContent = '发送中...';
-      
+
       try {
         const res = await fetch('/sendAll?secret=' + encodeURIComponent(token), { method: 'POST' });
         const data = await res.json();
-        
+
         if (res.ok && data.success) {
           showResult('success', '成功发送 ' + data.sentCount + '/' + data.totalCount + ' 个 Release');
         } else {
@@ -416,14 +500,14 @@ export function generateAdminHtml(): string {
         btn.textContent = '发送所有 Release';
       }
     }
-    
+
     async function refreshChangelog() {
       const token = getToken();
-      
+
       try {
         const res = await fetch('/changelog/refresh?secret=' + encodeURIComponent(token));
         const data = await res.json();
-        
+
         if (res.ok && data.success) {
           showResult('success', 'Changelog 已刷新，共 ' + data.count + ' 条记录');
           refreshStatus();
@@ -434,7 +518,7 @@ export function generateAdminHtml(): string {
         showResult('error', '网络错误');
       }
     }
-    
+
     function showResult(type, msg) {
       const el = document.getElementById('actionResult');
       el.className = 'result-msg ' + type;
@@ -442,13 +526,13 @@ export function generateAdminHtml(): string {
       el.style.display = 'block';
       setTimeout(() => { el.style.display = 'none'; }, 5000);
     }
-    
+
     function formatTime(iso) {
       if (!iso) return '-';
       const d = new Date(iso);
       return d.toLocaleString('zh-CN');
     }
-    
+
     // Check if already logged in
     if (getToken()) {
       showDashboard();
@@ -465,14 +549,14 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
   try {
     const body = await request.json();
     const { password } = body as { password: string };
-    
+
     if (verifyPassword(password, env)) {
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    
+
     return new Response(JSON.stringify({ success: false, message: '密码错误' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
@@ -490,16 +574,16 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
  */
 export async function handleStatusRequest(request: Request, env: Env): Promise<Response> {
   const token = request.headers.get('X-Admin-Token');
-  
+
   if (!token || !verifyPassword(token, env)) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     });
   }
-  
+
   let changelogData = await getChangelogFromKV(env.CHANGELOG_KV);
-  
+
   const status = {
     webhook: {
       status: 'online',
@@ -514,7 +598,7 @@ export async function handleStatusRequest(request: Request, env: Env): Promise<R
       status: 'online',
     },
   };
-  
+
   return new Response(JSON.stringify(status), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
