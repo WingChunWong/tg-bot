@@ -18,7 +18,7 @@ function verifyPassword(password: string, env: Env): boolean {
  */
 export function generateAdminHtml(): string {
   return `<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,7 +38,7 @@ export function generateAdminHtml(): string {
       --error-bg: #fff2f0;
       --error-border: #ffccc7;
     }
-    
+
     [data-theme="dark"] {
       --bg-primary: #141414;
       --bg-secondary: #1f1f1f;
@@ -53,7 +53,7 @@ export function generateAdminHtml(): string {
       --error-bg: #2a1215;
       --error-border: #5c2a2e;
     }
-    
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -114,29 +114,7 @@ export function generateAdminHtml(): string {
       margin-bottom: 12px;
       display: none;
     }
-    
-    /* Theme Toggle */
-    .theme-toggle {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      border: 1px solid var(--border-color);
-      background: var(--bg-secondary);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      z-index: 100;
-      transition: all 0.3s;
-    }
-    .theme-toggle:hover {
-      border-color: #1890ff;
-    }
-    
+
     /* Dashboard */
     .dashboard { display: none; }
     .header {
@@ -282,8 +260,6 @@ export function generateAdminHtml(): string {
   </style>
 </head>
 <body>
-  <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">🌙</button>
-  
   <!-- Login -->
   <div class="login-container" id="loginPage">
     <div class="login-box">
@@ -366,33 +342,6 @@ export function generateAdminHtml(): string {
 
   <script>
     const tokenKey = 'admin_token';
-    const themeKey = 'admin_theme';
-    
-    // Theme management
-    function getTheme() {
-      const saved = localStorage.getItem(themeKey);
-      if (saved) return saved;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    
-    function setTheme(theme) {
-      document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem(themeKey, theme);
-      updateThemeIcon(theme);
-    }
-    
-    function updateThemeIcon(theme) {
-      const btn = document.querySelector('.theme-toggle');
-      if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-    }
-    
-    function toggleTheme() {
-      const current = document.documentElement.getAttribute('data-theme') || 'light';
-      setTheme(current === 'dark' ? 'light' : 'dark');
-    }
-    
-    // Initialize theme
-    setTheme(getTheme());
 
     function getToken() {
       return sessionStorage.getItem(tokenKey);
