@@ -6,11 +6,21 @@ import { ChangelogData } from '../types';
 import { formatDate } from '../telegram/messages';
 
 /**
+ * 将 Markdown 标题级别降低一级
+ * # -> ##, ## -> ###, 以此类推
+ */
+function demoteHeadings(markdown: string): string {
+  return markdown.replace(/^(#{1,6})\s/gm, (_match, hashes) => {
+    return hashes + '#' + ' ';
+  });
+}
+
+/**
  * 生成 CHANGELOG.md 格式的 Markdown 内容
  */
 export function generateChangelogMarkdown(data: ChangelogData, _repoFullName: string): string {
   const lines: string[] = [
-    `# Changelog`,
+    `## Changelog`,
     ``,
   ];
 
@@ -18,7 +28,7 @@ export function generateChangelogMarkdown(data: ChangelogData, _repoFullName: st
     const releaseDate = formatDate(entry.published_at);
     const releaseUrl = entry.html_url;
 
-    lines.push(`## [${entry.tag_name}](${releaseUrl})`);
+    lines.push(`### [${entry.tag_name}](${releaseUrl})`);
     lines.push(``);
     if (entry.prerelease) {
       lines.push(` *(Pre-release)*`);
@@ -28,7 +38,8 @@ export function generateChangelogMarkdown(data: ChangelogData, _repoFullName: st
     lines.push(``);
 
     if (entry.body) {
-      lines.push(entry.body);
+      // 将 release body 中的标题级别降低一级
+      lines.push(demoteHeadings(entry.body));
     } else {
       lines.push(`*No release notes provided.*`);
     }
