@@ -12,8 +12,6 @@ export function generateChangelogMarkdown(data: ChangelogData, _repoFullName: st
   const lines: string[] = [
     `# Changelog`,
     ``,
-    `---`,
-    ``,
   ];
 
   for (const entry of data.entries) {
