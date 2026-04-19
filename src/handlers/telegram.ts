@@ -2,8 +2,8 @@
  * Telegram Webhook 处理器
  */
 
-import { Env, TelegramUpdate } from '../types';
-import { sendTelegramMessage, isChatAdmin, isAdminUser } from '../telegram/api';
+import { isAdminUser, isChatAdmin, sendTelegramMessage } from '../telegram/api';
+import type { Env, TelegramUpdate } from '../types';
 import { executeSendAll } from './sendAll';
 
 /**
@@ -18,7 +18,7 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
   }
 
   const message = update.message;
-  if (!message || !message.text) {
+  if (!message?.text) {
     return new Response('OK', { status: 200 });
   }
 
@@ -33,8 +33,9 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
 
   // 处理 /sendAll 命令
   if (text === '/sendAll' || text.startsWith('/sendAll@')) {
-    const isAdmin = await isChatAdmin(env.TG_BOT_TOKEN, chatId, userId) ||
-                    isAdminUser(userId, env.ADMIN_USER_IDS);
+    const isAdmin =
+      (await isChatAdmin(env.TG_BOT_TOKEN, chatId, userId)) ||
+      isAdminUser(userId, env.ADMIN_USER_IDS);
 
     if (!isAdmin) {
       await sendTelegramMessage(
@@ -42,7 +43,7 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
         chatId,
         'Permission denied. Admin only. / 权限不足，仅管理员可用。',
         'Markdown',
-        threadId
+        threadId,
       );
       return new Response('OK', { status: 200 });
     }
@@ -52,7 +53,7 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
       chatId,
       'Sending all releases, please wait... / 正在发送所有发布，请稍候...',
       'Markdown',
-      threadId
+      threadId,
     );
 
     const result = await executeSendAll(env, threadId);
@@ -62,7 +63,7 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
       chatId,
       `Done! Sent ${result.sentCount}/${result.totalCount} releases. / 完成！已发送 ${result.sentCount}/${result.totalCount} 个发布。`,
       'Markdown',
-      threadId
+      threadId,
     );
 
     return new Response('OK', { status: 200 });

@@ -2,11 +2,11 @@
  * GitHub Webhook 处理器
  */
 
-import { Env, GitHubReleasePayload } from '../types';
+import { refreshChangelogByApiDiff } from '../changelog/kv';
 import { verifyGitHubSignature } from '../github';
 import { sendTelegramMessage } from '../telegram/api';
 import { buildNotificationMessage } from '../telegram/messages';
-import { refreshChangelogByApiDiff } from '../changelog/kv';
+import type { Env, GitHubReleasePayload } from '../types';
 
 const SUPPORTED_RELEASE_ACTIONS = new Set(['published', 'released', 'prereleased']);
 
@@ -21,10 +21,7 @@ function logWebhookError(message: string, details: Record<string, unknown>): voi
 /**
  * 处理 GitHub Webhook 请求
  */
-export async function handleGitHubWebhook(
-  request: Request,
-  env: Env
-): Promise<Response> {
+export async function handleGitHubWebhook(request: Request, env: Env): Promise<Response> {
   if (request.method !== 'POST') {
     return new Response('Method Not Allowed', {
       status: 405,
@@ -89,14 +86,14 @@ export async function handleGitHubWebhook(
 
   // 构建并发送通知
   const message = buildNotificationMessage(data);
-  const threadId = env.TG_THREAD_ID ? parseInt(env.TG_THREAD_ID) : undefined;
+  const threadId = env.TG_THREAD_ID ? parseInt(env.TG_THREAD_ID, 10) : undefined;
 
   const telegramResponse = await sendTelegramMessage(
     env.TG_BOT_TOKEN,
     env.TG_CHAT_ID,
     message,
     'Markdown',
-    threadId
+    threadId,
   );
 
   // 与定时任务保持一致：通过 API 扫描并对比后刷新 changelog

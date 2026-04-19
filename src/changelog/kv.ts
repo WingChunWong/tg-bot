@@ -2,9 +2,9 @@
  * Changelog KV 存储操作
  */
 
-import { Env, ChangelogData, ChangelogEntry, GitHubRelease } from '../types';
 import { CHANGELOG_KV_KEY, GITHUB_OWNER, GITHUB_REPO } from '../config';
 import { fetchAllReleases } from '../github';
+import type { ChangelogData, ChangelogEntry, Env, GitHubRelease } from '../types';
 
 export interface ChangelogRefreshResult {
   changed: boolean;
@@ -37,7 +37,7 @@ function toEntriesSnapshot(entries: ChangelogEntry[]): string {
       author_login: entry.author.login,
       author_url: entry.author.html_url,
       prerelease: entry.prerelease,
-    }))
+    })),
   );
 }
 
@@ -94,7 +94,9 @@ export async function refreshChangelogByApiDiff(env: Env): Promise<ChangelogRefr
   const releases = await fetchAllReleases(GITHUB_OWNER, GITHUB_REPO, env.GITHUB_TOKEN);
   const incomingEntries = releases.map(mapReleaseToEntry);
 
-  incomingEntries.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
+  incomingEntries.sort(
+    (a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime(),
+  );
 
   const currentData = await getChangelogFromKV(env.CHANGELOG_KV);
   if (!currentData) {
@@ -136,15 +138,15 @@ export async function refreshChangelogByApiDiff(env: Env): Promise<ChangelogRefr
  */
 export async function addReleaseToChangelog(
   env: Env,
-  release: GitHubRelease
+  release: GitHubRelease,
 ): Promise<ChangelogData> {
-  let data = await getChangelogFromKV(env.CHANGELOG_KV);
+  const data = await getChangelogFromKV(env.CHANGELOG_KV);
 
   if (!data) {
     return await initializeChangelog(env);
   }
 
-  if (data.entries.some(e => e.id === release.id)) {
+  if (data.entries.some((e) => e.id === release.id)) {
     return data;
   }
 

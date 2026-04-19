@@ -10,7 +10,7 @@ export async function sendTelegramMessage(
   chatId: string,
   text: string,
   parseMode: 'Markdown' | 'HTML' = 'Markdown',
-  messageThreadId?: number
+  messageThreadId?: number,
 ): Promise<Response> {
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
 
@@ -40,19 +40,22 @@ export async function sendTelegramMessage(
 export async function isChatAdmin(
   botToken: string,
   chatId: string,
-  userId: number
+  userId: number,
 ): Promise<boolean> {
   const url = `https://api.telegram.org/bot${botToken}/getChatAdministrators?chat_id=${chatId}`;
 
   try {
     const response = await fetch(url);
-    const data = await response.json() as { ok: boolean; result?: Array<{ user: { id: number } }> };
+    const data = (await response.json()) as {
+      ok: boolean;
+      result?: Array<{ user: { id: number } }>;
+    };
 
     if (!data.ok || !data.result) {
       return false;
     }
 
-    return data.result.some(admin => admin.user.id === userId);
+    return data.result.some((admin) => admin.user.id === userId);
   } catch {
     return false;
   }
@@ -63,6 +66,6 @@ export async function isChatAdmin(
  */
 export function isAdminUser(userId: number, adminUserIds?: string): boolean {
   if (!adminUserIds) return false;
-  const ids = adminUserIds.split(',').map(id => id.trim());
+  const ids = adminUserIds.split(',').map((id) => id.trim());
   return ids.includes(userId.toString());
 }

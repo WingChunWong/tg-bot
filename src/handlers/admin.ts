@@ -2,9 +2,9 @@
  * 管理后台处理器
  */
 
-import { Env } from '../types';
-import { GITHUB_OWNER, GITHUB_REPO } from '../config';
 import { getChangelogFromKV } from '../changelog/kv';
+import { GITHUB_OWNER, GITHUB_REPO } from '../config';
+import type { Env } from '../types';
 
 /**
  * 验证登录密码
@@ -582,7 +582,7 @@ export async function handleStatusRequest(request: Request, env: Env): Promise<R
     });
   }
 
-  let changelogData = await getChangelogFromKV(env.CHANGELOG_KV);
+  const changelogData = await getChangelogFromKV(env.CHANGELOG_KV);
 
   const missingConfig: string[] = [];
   if (!env.TG_BOT_TOKEN) missingConfig.push('TG_BOT_TOKEN');
@@ -595,9 +595,7 @@ export async function handleStatusRequest(request: Request, env: Env): Promise<R
   const status = {
     webhook: {
       status: webhookHealthy ? 'online' : 'offline',
-      message: webhookHealthy
-        ? 'Webhook 配置完整'
-        : `缺少配置: ${missingConfig.join(', ')}`,
+      message: webhookHealthy ? 'Webhook 配置完整' : `缺少配置: ${missingConfig.join(', ')}`,
       missingConfig,
     },
     changelog: {

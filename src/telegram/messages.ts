@@ -2,7 +2,7 @@
  * Telegram 消息格式化功能
  */
 
-import { GitHubRelease, GitHubReleasePayload } from '../types';
+import type { GitHubRelease, GitHubReleasePayload } from '../types';
 
 /**
  * 截断文本到指定长度
@@ -10,7 +10,7 @@ import { GitHubRelease, GitHubReleasePayload } from '../types';
 export function truncateText(text: string, maxLength: number): string {
   if (!text) return '';
   if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength - 3) + '...';
+  return `${text.slice(0, maxLength - 3)}...`;
 }
 
 /**
@@ -18,7 +18,7 @@ export function truncateText(text: string, maxLength: number): string {
  */
 export function escapeMarkdown(text: string): string {
   if (!text) return '';
-  return text.replace(/([`_*\[\]])/g, '\\$1');
+  return text.replace(/([`_*[\]])/g, '\\$1');
 }
 
 /**
@@ -33,7 +33,7 @@ export function convertMarkdownForTelegram(text: string): string {
   result = result.replace(/\*\*(.+?)\*\*/g, '*$1*');
   result = result.replace(/__(.+?)__/g, '*$1*');
   result = result.replace(/~~(.+?)~~/g, '$1');
-  result = result.replace(/([`_*\[\]])/g, '\\$1');
+  result = result.replace(/([`_*[\]])/g, '\\$1');
   result = result.replace(/\\\*/g, '*');
   result = result.replace(/\\`/g, '`');
 
@@ -64,7 +64,9 @@ export function buildNotificationMessage(payload: GitHubReleasePayload): string 
 
   const repoName = repository.full_name || repository.name;
   const releaseName = escapeMarkdown(release.name || release.tag_name);
-  const releaseBody = convertMarkdownForTelegram(truncateText(release.body || '无发布说明 / No release notes', 500));
+  const releaseBody = convertMarkdownForTelegram(
+    truncateText(release.body || '无发布说明 / No release notes', 500),
+  );
   const tagUrl = `https://github.com/${repository.full_name}/releases/tag/${release.tag_name}`;
 
   return `*New Release / 新版本发布*
@@ -87,10 +89,12 @@ ${releaseBody}
 export function buildApiReleaseMessage(
   release: GitHubRelease,
   repoFullName: string,
-  repoUrl: string
+  repoUrl: string,
 ): string {
   const releaseName = escapeMarkdown(release.name || release.tag_name);
-  const releaseBody = convertMarkdownForTelegram(truncateText(release.body || '无发布说明 / No release notes', 500));
+  const releaseBody = convertMarkdownForTelegram(
+    truncateText(release.body || '无发布说明 / No release notes', 500),
+  );
   const tagUrl = `https://github.com/${repoFullName}/releases/tag/${release.tag_name}`;
 
   return `*New Release / 新版本发布*

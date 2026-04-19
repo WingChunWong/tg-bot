@@ -2,8 +2,8 @@
  * GitHub API 相关功能
  */
 
-import { GitHubApiRelease } from '../types';
 import { GITHUB_OWNER, GITHUB_REPO } from '../config';
+import type { GitHubApiRelease } from '../types';
 
 /**
  * 获取 GitHub 仓库的所有 Releases
@@ -11,17 +11,17 @@ import { GITHUB_OWNER, GITHUB_REPO } from '../config';
 export async function fetchAllReleases(
   owner: string = GITHUB_OWNER,
   repo: string = GITHUB_REPO,
-  token?: string
+  token?: string,
 ): Promise<GitHubApiRelease[]> {
   const url = `https://api.github.com/repos/${owner}/${repo}/releases`;
 
   const headers: Record<string, string> = {
-    'Accept': 'application/vnd.github.v3+json',
+    Accept: 'application/vnd.github.v3+json',
     'User-Agent': 'GitHub-Release-Telegram-Bot',
   };
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
   }
 
   const response = await fetch(url, { headers });
@@ -32,6 +32,6 @@ export async function fetchAllReleases(
 
   const releases: GitHubApiRelease[] = await response.json();
   return releases
-    .filter(r => !r.draft)
+    .filter((r) => !r.draft)
     .sort((a, b) => new Date(a.published_at).getTime() - new Date(b.published_at).getTime());
 }

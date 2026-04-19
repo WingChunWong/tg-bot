@@ -2,14 +2,14 @@
  * SendAll 路由处理器
  */
 
-import { Env } from '../types';
 import { GITHUB_OWNER, GITHUB_REPO, getRepoFullName, getRepoUrl } from '../config';
 import { fetchAllReleases } from '../github';
 import { sendTelegramMessage } from '../telegram/api';
 import { buildApiReleaseMessage } from '../telegram/messages';
+import type { Env } from '../types';
 
 function resolveThreadId(env: Env, threadId?: number): number | undefined {
-  return threadId ?? (env.TG_THREAD_ID ? parseInt(env.TG_THREAD_ID) : undefined);
+  return threadId ?? (env.TG_THREAD_ID ? parseInt(env.TG_THREAD_ID, 10) : undefined);
 }
 
 function isAuthorizedAdminRequest(request: Request, env: Env): boolean {
@@ -17,7 +17,9 @@ function isAuthorizedAdminRequest(request: Request, env: Env): boolean {
   const querySecret = url.searchParams.get('secret');
   const adminToken = request.headers.get('X-Admin-Token');
 
-  const byAdminToken = Boolean(env.ADMIN_PASSWORD && adminToken && adminToken === env.ADMIN_PASSWORD);
+  const byAdminToken = Boolean(
+    env.ADMIN_PASSWORD && adminToken && adminToken === env.ADMIN_PASSWORD,
+  );
   const byLegacySecret = Boolean(querySecret && querySecret === env.GITHUB_WEBHOOK_SECRET);
   return byAdminToken || byLegacySecret;
 }
@@ -27,7 +29,7 @@ function isAuthorizedAdminRequest(request: Request, env: Env): boolean {
  */
 export async function executeSendAll(
   env: Env,
-  threadId?: number
+  threadId?: number,
 ): Promise<{ success: boolean; message: string; sentCount: number; totalCount: number }> {
   try {
     const releases = await fetchAllReleases(GITHUB_OWNER, GITHUB_REPO, env.GITHUB_TOKEN);
@@ -49,12 +51,12 @@ export async function executeSendAll(
         env.TG_CHAT_ID,
         message,
         'Markdown',
-        effectiveThreadId
+        effectiveThreadId,
       );
 
       if (telegramResponse.ok) {
         sentCount++;
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
 
@@ -62,14 +64,14 @@ export async function executeSendAll(
       success: true,
       message: `Sent ${sentCount}/${releases.length} releases`,
       sentCount,
-      totalCount: releases.length
+      totalCount: releases.length,
     };
   } catch (error) {
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Unknown error',
       sentCount: 0,
-      totalCount: 0
+      totalCount: 0,
     };
   }
 }
@@ -79,7 +81,7 @@ export async function executeSendAll(
  */
 export async function executeSendLatest(
   env: Env,
-  threadId?: number
+  threadId?: number,
 ): Promise<{ success: boolean; message: string; tagName?: string }> {
   try {
     const releases = await fetchAllReleases(GITHUB_OWNER, GITHUB_REPO, env.GITHUB_TOKEN);
@@ -95,7 +97,7 @@ export async function executeSendLatest(
       env.TG_CHAT_ID,
       message,
       'Markdown',
-      resolveThreadId(env, threadId)
+      resolveThreadId(env, threadId),
     );
 
     if (!telegramResponse.ok) {
@@ -132,27 +134,33 @@ export async function handleSendAll(request: Request, env: Env): Promise<Respons
   }
 
   if (!isAuthorizedAdminRequest(request, env)) {
-    return new Response(JSON.stringify({
-      error: 'Unauthorized',
-      message: 'Admin token required. Use X-Admin-Token header or legacy ?secret=YOUR_SECRET'
-    }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({
+        error: 'Unauthorized',
+        message: 'Admin token required. Use X-Admin-Token header or legacy ?secret=YOUR_SECRET',
+      }),
+      {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
   }
 
   try {
     const releases = await fetchAllReleases(GITHUB_OWNER, GITHUB_REPO, env.GITHUB_TOKEN);
 
     if (releases.length === 0) {
-      return new Response(JSON.stringify({
-        success: true,
-        message: 'No releases found',
-        count: 0
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'No releases found',
+          count: 0,
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     const repoFullName = getRepoFullName();
@@ -160,7 +168,7 @@ export async function handleSendAll(request: Request, env: Env): Promise<Respons
     let sentCount = 0;
     const errors: string[] = [];
 
-    const threadId = env.TG_THREAD_ID ? parseInt(env.TG_THREAD_ID) : undefined;
+    const threadId = env.TG_THREAD_ID ? parseInt(env.TG_THREAD_ID, 10) : undefined;
     for (const release of releases) {
       const message = buildApiReleaseMessage(release, repoFullName, repoUrl);
 
@@ -169,39 +177,44 @@ export async function handleSendAll(request: Request, env: Env): Promise<Respons
         env.TG_CHAT_ID,
         message,
         'Markdown',
-        threadId
+        threadId,
       );
 
       if (telegramResponse.ok) {
         sentCount++;
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       } else {
         const errorText = await telegramResponse.text();
         errors.push(`Release ${release.tag_name}: ${errorText}`);
       }
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      message: `Sent ${sentCount}/${releases.length} releases`,
-      repository: repoFullName,
-      sentCount,
-      totalCount: releases.length,
-      errors: errors.length > 0 ? errors : undefined
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: `Sent ${sentCount}/${releases.length} releases`,
+        repository: repoFullName,
+        sentCount,
+        totalCount: releases.length,
+        errors: errors.length > 0 ? errors : undefined,
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
   } catch (error) {
     console.error('Error in /sendAll:', error);
-    return new Response(JSON.stringify({
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
   }
 }
 
@@ -217,13 +230,16 @@ export async function handleSendLatest(request: Request, env: Env): Promise<Resp
   }
 
   if (!isAuthorizedAdminRequest(request, env)) {
-    return new Response(JSON.stringify({
-      error: 'Unauthorized',
-      message: 'Admin token required. Use X-Admin-Token header or legacy ?secret=YOUR_SECRET'
-    }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({
+        error: 'Unauthorized',
+        message: 'Admin token required. Use X-Admin-Token header or legacy ?secret=YOUR_SECRET',
+      }),
+      {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
   }
 
   const result = await executeSendLatest(env);

@@ -2,10 +2,14 @@
  * Changelog 相关路由处理器
  */
 
-import { Env } from '../types';
-import { getRepoFullName } from '../config';
-import { getChangelogFromKV, initializeChangelog, refreshChangelogByApiDiff } from '../changelog/kv';
 import { generateChangelogMarkdown } from '../changelog/generator';
+import {
+  getChangelogFromKV,
+  initializeChangelog,
+  refreshChangelogByApiDiff,
+} from '../changelog/kv';
+import { getRepoFullName } from '../config';
+import type { Env } from '../types';
 
 /** CORS 响应头 */
 const CORS_HEADERS = {
@@ -24,14 +28,17 @@ export async function handleChangelogRequest(env: Env): Promise<Response> {
     data = await initializeChangelog(env);
   }
 
-  return new Response(JSON.stringify({
-    success: true,
-    repository: getRepoFullName(),
-    data
-  }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
-  });
+  return new Response(
+    JSON.stringify({
+      success: true,
+      repository: getRepoFullName(),
+      data,
+    }),
+    {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+    },
+  );
 }
 
 /**
@@ -51,13 +58,16 @@ export function handleChangelogOptions(): Response {
 export async function handleChangelogMdRequest(env: Env, secret?: string): Promise<Response> {
   // 如果提供了 secret，验证是否正确
   if (secret && secret !== env.CHANGELOG_SECRET) {
-    return new Response(JSON.stringify({
-      error: 'Unauthorized',
-      message: 'Invalid secret'
-    }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
-    });
+    return new Response(
+      JSON.stringify({
+        error: 'Unauthorized',
+        message: 'Invalid secret',
+      }),
+      {
+        status: 403,
+        headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+      },
+    );
   }
 
   let data = await getChangelogFromKV(env.CHANGELOG_KV);
@@ -83,7 +93,9 @@ function isAuthorizedAdminRequest(request: Request, env: Env): boolean {
   const querySecret = url.searchParams.get('secret');
   const adminToken = request.headers.get('X-Admin-Token');
 
-  const byAdminToken = Boolean(env.ADMIN_PASSWORD && adminToken && adminToken === env.ADMIN_PASSWORD);
+  const byAdminToken = Boolean(
+    env.ADMIN_PASSWORD && adminToken && adminToken === env.ADMIN_PASSWORD,
+  );
   const byLegacySecret = Boolean(querySecret && querySecret === env.GITHUB_WEBHOOK_SECRET);
   return byAdminToken || byLegacySecret;
 }
@@ -93,35 +105,44 @@ function isAuthorizedAdminRequest(request: Request, env: Env): boolean {
  */
 export async function handleChangelogRefresh(request: Request, env: Env): Promise<Response> {
   if (!isAuthorizedAdminRequest(request, env)) {
-    return new Response(JSON.stringify({
-      error: 'Unauthorized',
-      message: 'Admin token required. Use X-Admin-Token header or legacy ?secret=YOUR_SECRET'
-    }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
-    });
+    return new Response(
+      JSON.stringify({
+        error: 'Unauthorized',
+        message: 'Admin token required. Use X-Admin-Token header or legacy ?secret=YOUR_SECRET',
+      }),
+      {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+      },
+    );
   }
 
   try {
     const result = await refreshChangelogByApiDiff(env);
-    return new Response(JSON.stringify({
-      success: true,
-      message: result.changed ? 'Changelog refreshed successfully' : 'No changes detected',
-      changed: result.changed,
-      reason: result.reason,
-      count: result.data.entries.length,
-      lastUpdated: result.data.lastUpdated
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
-    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: result.changed ? 'Changelog refreshed successfully' : 'No changes detected',
+        changed: result.changed,
+        reason: result.reason,
+        count: result.data.entries.length,
+        lastUpdated: result.data.lastUpdated,
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+      },
+    );
   } catch (error) {
-    return new Response(JSON.stringify({
-      error: 'Failed to refresh changelog',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
-    });
+    return new Response(
+      JSON.stringify({
+        error: 'Failed to refresh changelog',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+      },
+    );
   }
 }

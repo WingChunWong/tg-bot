@@ -2,8 +2,8 @@
  * Changelog Markdown 生成器
  */
 
-import { ChangelogData } from '../types';
 import { formatDate } from '../telegram/messages';
+import type { ChangelogData } from '../types';
 
 /**
  * 将 Markdown 标题级别降低一级
@@ -11,7 +11,7 @@ import { formatDate } from '../telegram/messages';
  */
 function demoteHeadings(markdown: string): string {
   return markdown.replace(/^(#{1,6})\s/gm, (_match, hashes) => {
-    return hashes + '#' + ' ';
+    return `${hashes}# `;
   });
 }
 
@@ -19,10 +19,7 @@ function demoteHeadings(markdown: string): string {
  * 生成 CHANGELOG.md 格式的 Markdown 内容
  */
 export function generateChangelogMarkdown(data: ChangelogData, _repoFullName: string): string {
-  const lines: string[] = [
-    `# Changelog`,
-    ``,
-  ];
+  const lines: string[] = [`# Changelog`, ``];
 
   for (const entry of data.entries) {
     const releaseDate = formatDate(entry.published_at);

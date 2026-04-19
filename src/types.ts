@@ -10,8 +10,8 @@ export interface Env {
   GITHUB_WEBHOOK_SECRET: string;
   GITHUB_TOKEN?: string;
   ADMIN_USER_IDS?: string;
-  ADMIN_PASSWORD?: string;  // 管理后台登录密码
-  CHANGELOG_SECRET?: string;  // Changelog API 访问密钥
+  ADMIN_PASSWORD?: string; // 管理后台登录密码
+  CHANGELOG_SECRET?: string; // Changelog API 访问密钥
   ENVIRONMENT?: string;
   CHANGELOG_KV: KVNamespace;
 }
