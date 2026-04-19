@@ -10,6 +10,22 @@ import { executeSendAll } from './sendAll';
  * 处理 Telegram Bot 命令
  */
 export async function handleTelegramWebhook(request: Request, env: Env): Promise<Response> {
+  if (request.method !== 'POST') {
+    return new Response('Method Not Allowed', {
+      status: 405,
+      headers: { Allow: 'POST' },
+    });
+  }
+
+  if (!env.TG_WEBHOOK_SECRET) {
+    return new Response('Telegram webhook secret not configured', { status: 503 });
+  }
+
+  const webhookSecret = request.headers.get('X-Telegram-Bot-Api-Secret-Token');
+  if (webhookSecret !== env.TG_WEBHOOK_SECRET) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
   let update: TelegramUpdate;
   try {
     update = await request.json();

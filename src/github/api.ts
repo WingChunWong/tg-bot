@@ -13,8 +13,6 @@ export async function fetchAllReleases(
   repo: string = GITHUB_REPO,
   token?: string,
 ): Promise<GitHubApiRelease[]> {
-  const url = `https://api.github.com/repos/${owner}/${repo}/releases`;
-
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github.v3+json',
     'User-Agent': 'GitHub-Release-Telegram-Bot',
@@ -24,14 +22,29 @@ export async function fetchAllReleases(
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, { headers });
+  const releases: GitHubApiRelease[] = [];
+  const perPage = 100;
 
-  if (!response.ok) {
-    throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+  for (let page = 1; ; page++) {
+    const url = new URL(`https://api.github.com/repos/${owner}/${repo}/releases`);
+    url.searchParams.set('per_page', String(perPage));
+    url.searchParams.set('page', String(page));
+
+    const response = await fetch(url, { headers });
+
+    if (!response.ok) {
+      throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+    }
+
+    const pageReleases = (await response.json()) as GitHubApiRelease[];
+    releases.push(...pageReleases.filter((release) => !release.draft));
+
+    if (pageReleases.length < perPage) {
+      break;
+    }
   }
 
-  const releases: GitHubApiRelease[] = await response.json();
-  return releases
-    .filter((r) => !r.draft)
-    .sort((a, b) => new Date(a.published_at).getTime() - new Date(b.published_at).getTime());
+  return releases.sort(
+    (a, b) => new Date(a.published_at).getTime() - new Date(b.published_at).getTime(),
+  );
 }

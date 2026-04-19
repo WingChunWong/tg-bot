@@ -6,11 +6,128 @@ import { getChangelogFromKV } from '../changelog/kv';
 import { GITHUB_OWNER, GITHUB_REPO } from '../config';
 import type { Env } from '../types';
 
+const ADMIN_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  let result = 0;
+  for (let index = 0; index < a.length; index++) {
+    result |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  }
+
+  return result === 0;
+}
+
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes)
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function bytesToBase64Url(bytes: Uint8Array): string {
+  let binary = '';
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function base64UrlToBytes(value: string): Uint8Array {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index++) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes;
+}
+
+function encodeBase64Url(value: string): string {
+  return bytesToBase64Url(new TextEncoder().encode(value));
+}
+
+function decodeBase64Url(value: string): string {
+  return new TextDecoder().decode(base64UrlToBytes(value));
+}
+
+function randomNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return bytesToHex(bytes);
+}
+
+async function signValue(value: string, secret: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+
+  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(value));
+  return bytesToHex(new Uint8Array(signature));
+}
+
+async function issueAdminSessionToken(env: Env): Promise<string> {
+  if (!env.ADMIN_PASSWORD) {
+    throw new Error('ADMIN_PASSWORD is not configured');
+  }
+
+  const now = Date.now();
+  const payload = {
+    exp: now + ADMIN_SESSION_TTL_MS,
+    iat: now,
+    nonce: randomNonce(),
+  };
+  const payloadPart = encodeBase64Url(JSON.stringify(payload));
+  const signature = await signValue(payloadPart, env.ADMIN_PASSWORD);
+
+  return `${payloadPart}.${signature}`;
+}
+
+async function verifyAdminSessionToken(token: string | null, env: Env): Promise<boolean> {
+  if (!token || !env.ADMIN_PASSWORD) {
+    return false;
+  }
+
+  const separatorIndex = token.indexOf('.');
+  if (separatorIndex <= 0 || separatorIndex >= token.length - 1) {
+    return false;
+  }
+
+  const payloadPart = token.slice(0, separatorIndex);
+  const signaturePart = token.slice(separatorIndex + 1);
+  const expectedSignature = await signValue(payloadPart, env.ADMIN_PASSWORD);
+
+  if (!timingSafeEqual(expectedSignature, signaturePart)) {
+    return false;
+  }
+
+  try {
+    const payload = JSON.parse(decodeBase64Url(payloadPart)) as { exp?: number };
+    return typeof payload.exp === 'number' && payload.exp > Date.now();
+  } catch {
+    return false;
+  }
+}
+
+export async function authorizeAdminRequest(request: Request, env: Env): Promise<boolean> {
+  return verifyAdminSessionToken(request.headers.get('X-Admin-Token'), env);
+}
+
 /**
  * 验证登录密码
  */
 function verifyPassword(password: string, env: Env): boolean {
-  return env.ADMIN_PASSWORD ? password === env.ADMIN_PASSWORD : false;
+  return env.ADMIN_PASSWORD ? timingSafeEqual(password, env.ADMIN_PASSWORD) : false;
 }
 
 /**
@@ -368,8 +485,8 @@ export function generateAdminHtml(): string {
         });
 
         const data = await res.json();
-        if (res.ok && data.success) {
-          setToken(pwd);
+        if (res.ok && data.success && data.token) {
+          setToken(data.token);
           showDashboard();
         } else {
           document.getElementById('loginError').style.display = 'block';
@@ -401,6 +518,10 @@ export function generateAdminHtml(): string {
         const res = await fetch('/api/status', {
           headers: { 'X-Admin-Token': token }
         });
+        if (res.status === 401) {
+          logout();
+          return;
+        }
         const data = await res.json();
 
         if (data.webhook) {
@@ -456,6 +577,10 @@ export function generateAdminHtml(): string {
           method: 'POST',
           headers: { 'X-Admin-Token': token }
         });
+        if (res.status === 401) {
+          logout();
+          return;
+        }
         const data = await res.json();
 
         if (res.ok && data.success) {
@@ -483,6 +608,10 @@ export function generateAdminHtml(): string {
           method: 'POST',
           headers: { 'X-Admin-Token': token }
         });
+        if (res.status === 401) {
+          logout();
+          return;
+        }
         const data = await res.json();
 
         if (res.ok && data.success) {
@@ -506,6 +635,10 @@ export function generateAdminHtml(): string {
         const res = await fetch('/changelog/refresh', {
           headers: { 'X-Admin-Token': token }
         });
+        if (res.status === 401) {
+          logout();
+          return;
+        }
         const data = await res.json();
 
         if (res.ok && data.success) {
@@ -551,7 +684,8 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
     const { password } = body as { password: string };
 
     if (verifyPassword(password, env)) {
-      return new Response(JSON.stringify({ success: true }), {
+      const token = await issueAdminSessionToken(env);
+      return new Response(JSON.stringify({ success: true, token }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -573,9 +707,7 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
  * 处理状态查询请求
  */
 export async function handleStatusRequest(request: Request, env: Env): Promise<Response> {
-  const token = request.headers.get('X-Admin-Token');
-
-  if (!token || !verifyPassword(token, env)) {
+  if (!(await authorizeAdminRequest(request, env))) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
@@ -588,6 +720,7 @@ export async function handleStatusRequest(request: Request, env: Env): Promise<R
   if (!env.TG_BOT_TOKEN) missingConfig.push('TG_BOT_TOKEN');
   if (!env.TG_CHAT_ID) missingConfig.push('TG_CHAT_ID');
   if (!env.GITHUB_WEBHOOK_SECRET) missingConfig.push('GITHUB_WEBHOOK_SECRET');
+  if (!env.TG_WEBHOOK_SECRET) missingConfig.push('TG_WEBHOOK_SECRET');
   if (!env.CHANGELOG_KV) missingConfig.push('CHANGELOG_KV');
 
   const webhookHealthy = missingConfig.length === 0;

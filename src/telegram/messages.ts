@@ -18,7 +18,7 @@ export function truncateText(text: string, maxLength: number): string {
  */
 export function escapeMarkdown(text: string): string {
   if (!text) return '';
-  return text.replace(/([`_*[\]])/g, '\\$1');
+  return text.replace(/([`_*[\](){}/])/g, '\\$1');
 }
 
 /**
@@ -62,19 +62,19 @@ export function formatDate(dateString: string): string {
 export function buildNotificationMessage(payload: GitHubReleasePayload): string {
   const { release, repository, sender } = payload;
 
-  const repoName = repository.full_name || repository.name;
+  const repoName = escapeMarkdown(repository.full_name || repository.name);
   const releaseName = escapeMarkdown(release.name || release.tag_name);
   const releaseBody = convertMarkdownForTelegram(
     truncateText(release.body || '无发布说明 / No release notes', 500),
   );
-  const tagUrl = `https://github.com/${repository.full_name}/releases/tag/${release.tag_name}`;
+  const tagUrl = `https://github.com/${repository.full_name}/releases/tag/${encodeURIComponent(release.tag_name)}`;
 
   return `*New Release / 新版本发布*
 
 *Repository / 仓库*: [${repoName}](${repository.html_url})
-*Version / 版本*: [${release.tag_name}](${tagUrl})
+*Version / 版本*: [${escapeMarkdown(release.tag_name)}](${tagUrl})
 *Title / 标题*: ${releaseName}
-*Publisher / 发布者*: [${sender.login}](${sender.html_url})
+*Publisher / 发布者*: [${escapeMarkdown(sender.login)}](${sender.html_url})
 *Time / 时间*: ${formatDate(release.published_at)}
 
 *Release Notes / 发布说明*:
@@ -95,14 +95,14 @@ export function buildApiReleaseMessage(
   const releaseBody = convertMarkdownForTelegram(
     truncateText(release.body || '无发布说明 / No release notes', 500),
   );
-  const tagUrl = `https://github.com/${repoFullName}/releases/tag/${release.tag_name}`;
+  const tagUrl = `https://github.com/${repoFullName}/releases/tag/${encodeURIComponent(release.tag_name)}`;
 
   return `*New Release / 新版本发布*
 
-*Repository / 仓库*: [${repoFullName}](${repoUrl})
-*Version / 版本*: [${release.tag_name}](${tagUrl})
+*Repository / 仓库*: [${escapeMarkdown(repoFullName)}](${repoUrl})
+*Version / 版本*: [${escapeMarkdown(release.tag_name)}](${tagUrl})
 *Title / 标题*: ${releaseName}
-*Publisher / 发布者*: [${release.author.login}](${release.author.html_url})
+*Publisher / 发布者*: [${escapeMarkdown(release.author.login)}](${release.author.html_url})
 *Time / 时间*: ${formatDate(release.published_at)}
 
 *Release Notes / 发布说明*:

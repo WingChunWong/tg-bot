@@ -7,21 +7,10 @@ import { fetchAllReleases } from '../github';
 import { sendTelegramMessage } from '../telegram/api';
 import { buildApiReleaseMessage } from '../telegram/messages';
 import type { Env } from '../types';
+import { authorizeAdminRequest } from './admin';
 
 function resolveThreadId(env: Env, threadId?: number): number | undefined {
   return threadId ?? (env.TG_THREAD_ID ? parseInt(env.TG_THREAD_ID, 10) : undefined);
-}
-
-function isAuthorizedAdminRequest(request: Request, env: Env): boolean {
-  const url = new URL(request.url);
-  const querySecret = url.searchParams.get('secret');
-  const adminToken = request.headers.get('X-Admin-Token');
-
-  const byAdminToken = Boolean(
-    env.ADMIN_PASSWORD && adminToken && adminToken === env.ADMIN_PASSWORD,
-  );
-  const byLegacySecret = Boolean(querySecret && querySecret === env.GITHUB_WEBHOOK_SECRET);
-  return byAdminToken || byLegacySecret;
 }
 
 /**
@@ -133,7 +122,7 @@ export async function handleSendAll(request: Request, env: Env): Promise<Respons
     });
   }
 
-  if (!isAuthorizedAdminRequest(request, env)) {
+  if (!(await authorizeAdminRequest(request, env))) {
     return new Response(
       JSON.stringify({
         error: 'Unauthorized',
@@ -229,7 +218,7 @@ export async function handleSendLatest(request: Request, env: Env): Promise<Resp
     });
   }
 
-  if (!isAuthorizedAdminRequest(request, env)) {
+  if (!(await authorizeAdminRequest(request, env))) {
     return new Response(
       JSON.stringify({
         error: 'Unauthorized',

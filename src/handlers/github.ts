@@ -97,7 +97,18 @@ export async function handleGitHubWebhook(request: Request, env: Env): Promise<R
   );
 
   // 与定时任务保持一致：通过 API 扫描并对比后刷新 changelog
-  const refreshResult = await refreshChangelogByApiDiff(env);
+  let refreshResult: Awaited<ReturnType<typeof refreshChangelogByApiDiff>> | null = null;
+  try {
+    refreshResult = await refreshChangelogByApiDiff(env);
+  } catch (error) {
+    logWebhookError('failed to refresh changelog', {
+      eventType,
+      action: data.action,
+      releaseId,
+      tagName,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 
   if (!telegramResponse.ok) {
     const errorText = await telegramResponse.text();
@@ -108,8 +119,8 @@ export async function handleGitHubWebhook(request: Request, env: Env): Promise<R
       tagName,
       telegramStatus: telegramResponse.status,
       telegramBody: errorText,
-      changelogChanged: refreshResult.changed,
-      changelogReason: refreshResult.reason,
+      changelogChanged: refreshResult?.changed,
+      changelogReason: refreshResult?.reason,
     });
     return new Response('Failed to send notification', { status: 500 });
   }
@@ -119,8 +130,8 @@ export async function handleGitHubWebhook(request: Request, env: Env): Promise<R
     action: data.action,
     releaseId,
     tagName,
-    changelogChanged: refreshResult.changed,
-    changelogReason: refreshResult.reason,
+    changelogChanged: refreshResult?.changed,
+    changelogReason: refreshResult?.reason,
   });
 
   return new Response('OK', { status: 200 });

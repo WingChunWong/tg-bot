@@ -7,6 +7,7 @@ export interface Env {
   TG_BOT_TOKEN: string;
   TG_CHAT_ID: string;
   TG_THREAD_ID?: string;
+  TG_WEBHOOK_SECRET?: string;
   GITHUB_WEBHOOK_SECRET: string;
   GITHUB_TOKEN?: string;
   ADMIN_USER_IDS?: string;

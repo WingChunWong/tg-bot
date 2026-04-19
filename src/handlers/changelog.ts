@@ -10,6 +10,7 @@ import {
 } from '../changelog/kv';
 import { getRepoFullName } from '../config';
 import type { Env } from '../types';
+import { authorizeAdminRequest } from './admin';
 
 /** CORS 响应头 */
 const CORS_HEADERS = {
@@ -88,23 +89,11 @@ export async function handleChangelogMdRequest(env: Env, secret?: string): Promi
   });
 }
 
-function isAuthorizedAdminRequest(request: Request, env: Env): boolean {
-  const url = new URL(request.url);
-  const querySecret = url.searchParams.get('secret');
-  const adminToken = request.headers.get('X-Admin-Token');
-
-  const byAdminToken = Boolean(
-    env.ADMIN_PASSWORD && adminToken && adminToken === env.ADMIN_PASSWORD,
-  );
-  const byLegacySecret = Boolean(querySecret && querySecret === env.GITHUB_WEBHOOK_SECRET);
-  return byAdminToken || byLegacySecret;
-}
-
 /**
  * 处理 /changelog/refresh 请求 - 强制刷新 changelog
  */
 export async function handleChangelogRefresh(request: Request, env: Env): Promise<Response> {
-  if (!isAuthorizedAdminRequest(request, env)) {
+  if (!(await authorizeAdminRequest(request, env))) {
     return new Response(
       JSON.stringify({
         error: 'Unauthorized',
