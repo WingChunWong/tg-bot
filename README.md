@@ -45,7 +45,15 @@ pnpm wrangler secret put ADMIN_USER_IDS        # 管理员 ID（可选）
 pnpm dev      # 本地开发
 pnpm deploy   # 部署
 pnpm tail     # 查看日志
+pnpm lint     # Biome lint
+pnpm check    # Biome lint + format 检查
+pnpm format   # Biome 自动格式化
 ```
+
+## 代码规范
+
+- 本项目使用 Biome 进行格式化和 lint。
+- 配置文件位于 [biome.json](biome.json)。
 
 ## 包管理器说明
 

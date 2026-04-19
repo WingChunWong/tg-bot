@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "tail": "wrangler tail"
+    "tail": "wrangler tail",
+    "lint": "biome lint ./src",
+    "format": "biome format --write ./src",
+    "check": "biome check ./src"
   },
   "keywords": [
     "github",
@@ -19,6 +22,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@biomejs/biome": "^2.4.12",
     "@cloudflare/workers-types": "^4.20240117.0",
     "typescript": "^5.3.3",
     "wrangler": "^4.35.0"
